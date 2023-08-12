@@ -1,40 +1,37 @@
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::middleware::Logger;
+use actix_web::{get, App, HttpResponse, HttpServer, Responder};
+use serde_json::json;
+use sqlx::postgres::PgPoolOptions;
 
-struct AppState {
-    app_name: String,
-}
+#[get("/api/healthchecker")]
+async fn health_checker_handler() -> impl Responder {
+    const MESSAGE: &str = "Build Simple CRUD API with Rust, SQLX, MySQL, and Actix Web";
 
-#[get("/")]
-async fn hello(data: web::Data<AppState>) -> impl Responder {
-    let app_name = &data.app_name;
-
-    HttpResponse::Ok().body(format!("Hello {}!", app_name))
-}
-
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
-}
-
-async fn manual_echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
-}
-
-async fn manual_hello() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
+    HttpResponse::Ok().json(json!({"status": "success","message": MESSAGE}))
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect("postgres://postgres:postgres@localhost/rust_api_dev")
+        .await
+        .unwrap();
+
+    let row: (i64,) = sqlx::query_as("SELECT $1")
+        .bind(150_i64)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+    println!("{}", row.0);
+
+    println!("🚀 Server started successfully");
+
+    HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(AppState {
-                app_name: String::from("Actix Web"),
-            }))
-            .service(hello)
-            .service(echo)
-            .route("/hey", web::get().to(manual_hello))
-            .route("/echo2", web::post().to(manual_echo))
+            .service(health_checker_handler)
+            .wrap(Logger::default())
     })
     .bind(("127.0.0.1", 8080))?
     .run()
