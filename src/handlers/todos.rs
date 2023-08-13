@@ -16,7 +16,7 @@ pub async fn todo_list_handler(
 
     let todos = sqlx::query_as!(
         TodoModel,
-        "SELECT * FROM todos ORDER by id LIMIT $1 OFFSET $2",
+        "SELECT * FROM todos ORDER by id DESC LIMIT $1 OFFSET $2",
         limit as i32,
         offset as i32
     )
