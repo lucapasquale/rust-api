@@ -16,7 +16,7 @@ async fn main() -> std::io::Result<()> {
     if std::env::var_os("RUST_LOG").is_none() {
         std::env::set_var("RUST_LOG", "actix_web=info");
     }
-    dotenv().ok();
+    dotenv().expect(".env file not found");
     env_logger::init();
 
     let pool = get_db_pool().await;
@@ -37,20 +37,18 @@ async fn main() -> std::io::Result<()> {
 async fn get_db_pool() -> sqlx::PgPool {
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    let pool = match PgPoolOptions::new()
+    match PgPoolOptions::new()
         .max_connections(10)
         .connect(&database_url)
         .await
     {
         Ok(pool) => {
             println!("✅Connection to the database is successful!");
-            pool
+            return pool;
         }
         Err(err) => {
             println!("🔥 Failed to connect to the database: {:?}", err);
             std::process::exit(1);
         }
     };
-
-    pool
 }
