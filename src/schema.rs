@@ -14,14 +14,13 @@ pub struct ParamOptions {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateTodoSchema {
     pub title: String,
-    pub content: String,
-    pub done: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UpdateTodoSchema {
     pub title: Option<String>,
     pub content: Option<String>,
-    pub category: Option<String>,
-    pub published: Option<bool>,
+    pub done: Option<bool>,
 }
