@@ -1,4 +1,4 @@
-mod handler;
+mod handlers;
 mod models;
 mod schema;
 
@@ -26,7 +26,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(AppState { db: pool.clone() }))
-            .configure(handler::config)
+            .configure(handlers::config)
             .wrap(Logger::default())
     })
     .bind(("127.0.0.1", 8080))?
