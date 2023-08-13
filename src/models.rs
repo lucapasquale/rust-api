@@ -7,6 +7,6 @@ pub struct TodoModel {
     pub title: String,
     pub content: Option<String>,
     pub done: bool,
-    pub created_at: Option<chrono::NaiveDateTime>,
-    pub updated_at: Option<chrono::NaiveDateTime>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
 }

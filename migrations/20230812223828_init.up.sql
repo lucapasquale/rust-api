@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS todos (
     title TEXT NOT NULL,
     content TEXT NULL,
     done BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
