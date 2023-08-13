@@ -1,39 +1,56 @@
+mod handler;
+mod models;
+mod schema;
+
 use actix_web::middleware::Logger;
-use actix_web::{get, App, HttpResponse, HttpServer, Responder};
-use serde_json::json;
+use actix_web::{web, App, HttpServer};
+use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
 
-#[get("/api/healthchecker")]
-async fn health_checker_handler() -> impl Responder {
-    const MESSAGE: &str = "Build Simple CRUD API with Rust, SQLX, MySQL, and Actix Web";
-
-    HttpResponse::Ok().json(json!({"status": "success","message": MESSAGE}))
+pub struct AppState {
+    pub db: sqlx::PgPool,
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect("postgres://postgres:postgres@localhost/rust_api_dev")
-        .await
-        .unwrap();
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "actix_web=info");
+    }
+    dotenv().ok();
+    env_logger::init();
 
-    let row: (i64,) = sqlx::query_as("SELECT $1")
-        .bind(150_i64)
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-
-    println!("{}", row.0);
+    let pool = get_db_pool().await;
 
     println!("🚀 Server started successfully");
 
     HttpServer::new(move || {
         App::new()
-            .service(health_checker_handler)
+            .app_data(web::Data::new(AppState { db: pool.clone() }))
+            .configure(handler::config)
             .wrap(Logger::default())
     })
     .bind(("127.0.0.1", 8080))?
     .run()
     .await
+}
+
+async fn get_db_pool() -> sqlx::PgPool {
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let pool = match PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&database_url)
+        .await
+    {
+        Ok(pool) => {
+            println!("✅Connection to the database is successful!");
+            pool
+        }
+        Err(err) => {
+            println!("🔥 Failed to connect to the database: {:?}", err);
+            std::process::exit(1);
+        }
+    };
+
+    pool
 }
